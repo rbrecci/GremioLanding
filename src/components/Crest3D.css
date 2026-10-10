@@ -1,0 +1,39 @@
+.crest-3d {
+  inline-size: 100%;
+  block-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  min-block-size: 0;
+  position: relative;
+  isolation: isolate;
+  contain: size layout paint;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.crest-3d canvas {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  min-inline-size: 0;
+}
+
+.crest-3d__still {
+  display: block;
+  width: min(76%, 440px);
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: 50%;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 14px 45px rgb(0 0 0 / 18%);
+}
+
+@media (max-width: 640px) {
+  .crest-3d__still {
+    width: min(72%, 300px);
+  }
+}

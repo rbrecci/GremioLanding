@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Monograma conceitual GSA">
+  <circle cx="32" cy="32" r="30" fill="#07375E" stroke="#E9B827" stroke-width="2" />
+  <path d="M5 31h54M32 5v54" stroke="#3988C0" stroke-opacity=".45" />
+  <text x="32" y="39" fill="#F6F7F4" font-family="Arial, sans-serif" font-size="20" font-weight="800" text-anchor="middle">GSA</text>
+</svg>
