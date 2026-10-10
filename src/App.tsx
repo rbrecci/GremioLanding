@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import type { KeyboardEvent, PointerEvent } from 'react';
+import { Component, lazy, Suspense, useEffect, useRef, useState } from 'react';
+import type { KeyboardEvent, PointerEvent, ReactNode } from 'react';
 import { club, demoUpdates, gallery, navigation } from './data/content';
 import './styles.css';
 
@@ -22,16 +22,46 @@ function Arrow({ diagonal = false }: { diagonal?: boolean }) {
   return <span aria-hidden="true" className="arrow-icon">{diagonal ? '↗' : '→'}</span>;
 }
 
-function App() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [compact, setCompact] = useState(false);
-  const [activeSection, setActiveSection] = useState('inicio');
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [galleryIndex, setGalleryIndex] = useState(0);
-  const galleryRef = useRef<HTMLDivElement>(null);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const menuCloseRef = useRef<HTMLButtonElement>(null);
-  const dragStartRef = useRef<number | null>(null);
+class CrestErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    return this.state.failed ? <BrandMark className="hero-crest-fallback" /> : this.props.children;
+  }
+}
+
+function HeroCrest() {
+  const [use3D, setUse3D] = useState(() =>
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function' &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+    !window.matchMedia('(pointer: coarse)').matches,
+  );
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const coarsePointer = window.matchMedia('(pointer: coarse)');
+    const update = () => setUse3D(!reducedMotion.matches && !coarsePointer.matches);
+    reducedMotion.addEventListener('change', update);
+    coarsePointer.addEventListener('change', update);
+    update();
+    return () => {
+      reducedMotion.removeEventListener('change', update);
+      coarsePointer.removeEventListener('change', update);
+    };
+  }, []);
+
+  if (!use3D) return <BrandMark className="hero-crest-fallback" />;
+
+  return <CrestErrorBoundary><Suspense fallback={<BrandMark className="hero-crest-fallback" />}><Crest3D /></Suspense></CrestErrorBoundary>;
+}
+
+function ReadingProgress() {
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     let frame = 0;
@@ -39,8 +69,7 @@ function App() {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-        setScrollProgress(maxScroll > 0 ? (window.scrollY / maxScroll) * 100 : 0);
-        setCompact(window.scrollY > 90);
+        setProgress(maxScroll > 0 ? Math.max(0, Math.min((window.scrollY / maxScroll) * 100, 100)) : 0);
       });
     };
     update();
@@ -50,6 +79,34 @@ function App() {
       cancelAnimationFrame(frame);
       window.removeEventListener('scroll', update);
       window.removeEventListener('resize', update);
+    };
+  }, []);
+
+  return (
+    <div className="reading-progress" role="progressbar" aria-label="Progresso da página" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}>
+      <span style={{ transform: `scaleX(${progress / 100})` }} />
+    </div>
+  );
+}
+
+function App() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('inicio');
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const headerRef = useRef<HTMLElement>(null);
+  const galleryRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const menuCloseRef = useRef<HTMLButtonElement>(null);
+  const dragStartRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const update = () => {
+      headerRef.current?.classList.toggle('is-compact', window.scrollY > 90);
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', update);
     };
   }, []);
 
@@ -108,6 +165,7 @@ function App() {
   function onGalleryPointerDown(event: PointerEvent<HTMLDivElement>) {
     if (event.pointerType !== 'mouse' || event.button !== 0) return;
     dragStartRef.current = event.clientX;
+    event.currentTarget.setPointerCapture(event.pointerId);
   }
 
   function onGalleryPointerUp(event: PointerEvent<HTMLDivElement>) {
@@ -141,10 +199,8 @@ function App() {
   return (
     <>
       <a href="#conteudo" className="skip-link">Pular para o conteúdo</a>
-      <div className="reading-progress" role="progressbar" aria-label="Progresso da página" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(scrollProgress)}>
-        <span style={{ transform: `scaleX(${scrollProgress / 100})` }} />
-      </div>
-      <header className={`site-header ${compact ? 'is-compact' : ''}`}>
+      <ReadingProgress />
+      <header ref={headerRef} className="site-header">
         <a className="header-identity" href="#inicio" aria-label="Santo Alberto, voltar ao início">
           <BrandMark />
           <span><strong>Santo Alberto</strong><small>Santo André, SP</small></span>
@@ -178,8 +234,8 @@ function App() {
           <div className="hero-stage">
             <p className="hero-kicker">Grêmio Esportivo Jardim Santo Alberto</p>
             <h1 id="hero-title"><span>SANTO</span><span>ALBERTO<span className="hero-period">.</span></span></h1>
-            <div className="hero-medallion" aria-label="Escudo tridimensional do Santo Alberto">
-              <Suspense fallback={<BrandMark className="hero-crest-fallback" />}><Crest3D /></Suspense>
+            <div className="hero-medallion" aria-label="Escudo do Santo Alberto">
+              <HeroCrest />
             </div>
             <div className="hero-side-copy"><span>Desde 1974</span><span>Nossa história<br />entra em campo.</span></div>
           </div>
@@ -230,7 +286,7 @@ function App() {
         <section className="moments section-light" id="momentos" aria-labelledby="moments-title">
           <div className="section-topline"><span>Momentos</span><span>05 / 08</span></div>
           <div className="moments-heading"><div><p className="section-label">Arquivo em construção</p><h2 id="moments-title">Vale a pena<br />guardar.</h2></div><div className="gallery-controls"><span>{String(galleryIndex + 1).padStart(2, '0')} / {String(gallery.length).padStart(2, '0')}</span><button type="button" aria-label="Ilustração anterior" onClick={() => moveGallery(galleryIndex - 1)} disabled={galleryIndex === 0}>←</button><button type="button" aria-label="Próxima ilustração" onClick={() => moveGallery(galleryIndex + 1)} disabled={galleryIndex === gallery.length - 1}>→</button></div></div>
-          <div ref={galleryRef} className="gallery-track" role="region" aria-label="Galeria de imagens ilustrativas" tabIndex={0} onScroll={onGalleryScroll} onKeyDown={onGalleryKeyDown} onPointerDown={onGalleryPointerDown} onPointerUp={onGalleryPointerUp} onPointerCancel={() => { dragStartRef.current = null; }}>
+          <div ref={galleryRef} className="gallery-track" role="region" aria-label="Galeria de imagens ilustrativas" tabIndex={0} onScroll={onGalleryScroll} onKeyDown={onGalleryKeyDown} onPointerDown={onGalleryPointerDown} onPointerUp={onGalleryPointerUp} onPointerCancel={() => { dragStartRef.current = null; }} onLostPointerCapture={() => { dragStartRef.current = null; }}>
             {gallery.map((item, index) => <figure className={`gallery-panel gallery-${item.art}`} key={item.title}><div className="gallery-art"><img src={`${import.meta.env.BASE_URL}${item.image}`} alt={`Imagem ilustrativa: ${item.caption} Não retrata o clube.`} loading="lazy" draggable={false} /><span className="gallery-art-number">{String(index + 1).padStart(2, '0')}</span><span className="gallery-art-label">Arquivo visual proposto</span></div><figcaption><div><span>Imagem ilustrativa • Placeholder</span><h3>{item.title}</h3><p>{item.caption}</p></div><span>GSA / {String(index + 1).padStart(2, '0')}</span></figcaption></figure>)}
           </div>
           <p className="gallery-note">Imagens ilustrativas geradas para esta demonstração. Nenhuma imagem retrata a Arena, atletas ou partidas do clube.</p>

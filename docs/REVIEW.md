@@ -1,72 +1,53 @@
 # Revisão técnica do GremioLanding
 
-Data da revisão: 9 de outubro de 2026
+Revisão inicial: 9 de outubro de 2026. Atualização: 10 de outubro de 2026.
 
-## Escopo e veredito
+## Escopo e veredito atual
 
-Revisão estática do código, configuração, documentação e fluxo de publicação. Veredito: **falhou**. A proposta tem uma base visual consistente e cuidados visíveis com conteúdo demonstrativo, preferência por movimento reduzido e links externos. Ainda há riscos concretos de desempenho durante a rolagem, recuperação incompleta de falhas no módulo 3D e lacunas de validação automatizada e privacidade para uma futura publicação oficial.
+Esta revisão cobre código, configuração, documentação e o fluxo preparado para publicação. Os cinco achados técnicos prioritários da revisão inicial receberam correções. O projeto passou em 9 testes de comportamento, lint, checagem de tipos e build com a base `/GremioLanding/`. O preview local com essa base renderizou; menu e galeria foram conferidos visualmente.
 
-Não fiz validação visual em navegador, teste com leitor de tela, medição de desempenho, auditoria de dependências ou publicação. Esses pontos permanecem sem prova nesta revisão.
+**Veredito para a proposta demonstrativa: passou nos critérios verificados.** Isso não equivale a aprovar uma publicação oficial. Ainda faltam autorização e validação do conteúdo pelo clube, medição de desempenho em dispositivo de referência e teste com tecnologia assistiva e hardware real.
 
-## Achados prioritários
+## Achados técnicos resolvidos
 
-### P1. Falha do WebGL pode derrubar a árvore da interface
+| Prioridade inicial | Problema e impacto observado na revisão inicial | Correção implementada e evidência |
+|---|---|---|
+| P1 | Uma falha após a detecção inicial do WebGL podia derrubar a interface em vez de manter o escudo estático. | `src/App.tsx:25-60` envolve o módulo 3D em um limite de erro com `BrandMark` como fallback. `src/components/Crest3D.tsx` também troca para imagem estática quando recebe `webglcontextlost`. `src/App.test.tsx` simula falha de renderização e confirma que a página permanece presente. Perda real do contexto e falha real de textura ainda não foram reproduzidas em navegador. |
+| P2 | O progresso de leitura atualizava o estado de `App` durante a rolagem e podia renderizar novamente toda a página. | `src/App.tsx:63-86` isola o progresso em `ReadingProgress`; `src/App.tsx:102-111` atualiza a classe do cabeçalho sem estado de `App`. Um teste de rolagem confirma que o módulo 3D não renderiza novamente e que `aria-valuenow` muda. `src/styles.css` usa uma animação CSS de rolagem quando disponível, com o valor inline como alternativa. O ganho em tempo de quadro ainda não foi medido. |
+| P2 | Soltar o mouse fora da galeria podia deixar o gesto anterior ativo. | `src/App.tsx:165-178` captura o ponteiro no início do arraste; a galeria limpa o gesto em cancelamento e perda da captura. Testes verificam a chamada de `setPointerCapture` e o descarte após `lostpointercapture`. O gesto em dispositivos reais ainda precisa de validação. |
+| P2 | O projeto e o workflow não tinham testes de comportamento. | `package.json` oferece `npm test` com Vitest. `src/App.test.tsx` contém 9 testes para menu, links e conteúdo demonstrativo, galeria, fallback do escudo, preferência de movimento, ponteiro grosseiro e isolamento da rolagem. `.github/workflows/deploy.yml` usa Node 24 e executa os testes antes do build. A execução do workflow remoto após push ainda não foi observada nesta atualização. |
+| P2 | A tipografia dependia de uma requisição ao Google Fonts. | `src/main.tsx` importa Barlow Condensed e DM Sans pelos pacotes Fontsource; `src/styles.css` removeu o import remoto. O build gerou os arquivos de fonte sob `dist/assets`, e a busca no build não encontrou referências a Google Fonts. `docs/ASSETS.md` registra origem e licença. Ainda convém conferir composição e quebras de texto nos navegadores de destino. |
 
-Em `src/components/Crest3D.tsx:96-110`, o componente escolhe o modo 3D após testar a existência de um contexto WebGL. Em `src/App.tsx:181-182`, o `Suspense` cobre apenas o carregamento lazy e seu estado de espera. Não há tratamento de erro ao redor de `Crest3D` ou do `Canvas` para falhas posteriores, como erro ao criar o renderer, carregar a textura ou perder o contexto. O fallback 2D existe apenas quando a detecção inicial escolhe `still`.
+## Pontos pendentes e decisões de publicação
 
-**Impacto:** em um navegador que passa na detecção e falha durante a inicialização do Three.js, a interface pode apresentar erro de renderização em vez de manter o escudo estático.
+### P1. Conteúdo e direitos de uso ainda impedem uma publicação oficial
 
-**Correção recomendada:** envolver a experiência 3D em um limite de erro local que altere o modo para a imagem 2D. Confirmar com uma falha simulada de textura e uma falha de criação do renderer.
+`docs/CONTENT_PENDING.md` lista validações de identidade, história, arena, futebol, galeria, parceiros e contato. `src/App.tsx:252-253` apresenta a data de fundação no texto e no destaque visual, enquanto `docs/ASSETS.md:24` identifica o cadastro da Liga Santoandreense de 2025 como fonte e pede confirmação direta com o clube para uso oficial. `public/crest.png` tem origem documentada, mas `docs/ASSETS.md:7` registra autorização de uso e redistribuição pendente.
 
-### P2. A rolagem força renderização do componente inteiro a cada quadro
+**Ação:** obter aprovação do clube para fatos, marca, contatos e imagens antes de mudar a apresentação do projeto para oficial. Substituir material ilustrativo por arquivos autorizados e registrar créditos e consentimentos, especialmente para fotos com menores. O aviso de proposta independente em `src/App.tsx` e a lista de pendências devem permanecer até essa decisão.
 
-Em `src/App.tsx:36-54`, o listener de rolagem atualiza `scrollProgress` dentro de `requestAnimationFrame`. O valor muda continuamente enquanto a página rola e é usado no topo do próprio `App`, que também contém todas as seções da página. Assim, uma página longa pode reconciliar novamente toda a árvore a cada quadro de rolagem.
+### P2. O módulo 3D ainda exige medição de desempenho
 
-**Impacto:** o custo cresce com o conteúdo e pode competir com o movimento do medalhão e a animação da página em dispositivos mais lentos.
+O build produz um chunk lazy do escudo 3D com 916,44 kB, ou 243,42 kB comprimidos com gzip. `src/App.tsx:37-60` evita importar o módulo em dispositivos com `pointer: coarse` ou preferência por movimento reduzido, o que limita o custo nesses casos. Em desktop com ponteiro fino, o chunk continua relevante para carregamento e execução. O aviso de tamanho do Vite é um sinal para investigar, não prova de lentidão percebida.
 
-**Correção recomendada:** manter a barra de progresso fora da árvore que contém as seções, ou atualizar sua escala por uma propriedade CSS sem renderizar todo o `App`. Manter o estado compacto do cabeçalho separado e atualizado apenas quando cruzar o limite de 90 pixels.
+**Ação:** medir carregamento, tempo de interação e fluidez em um desktop modesto e em um celular de referência. Se a experiência for prejudicada, comparar a versão 2D como padrão com a versão 3D atual antes de otimizar geometria ou trocar bibliotecas. Esta revisão não inclui essas medições.
 
-### P2. A galeria não garante o fim do gesto de arraste fora da área
+### P2. Falta validar acessibilidade e interação em ambiente real
 
-Em `src/App.tsx:108-119`, o início e o fim do gesto são tratados no próprio contêiner da galeria. Não há captura do ponteiro. Se o usuário soltar o botão fora do contêiner, `onGalleryPointerUp` não recebe o evento e `dragStartRef` permanece preenchido. Uma interação posterior pode ser interpretada usando a posição antiga.
+Os testes automatizados cobrem estados e eventos da galeria e do menu, mas usam `jsdom` e um módulo 3D simulado. O preview local confirmou renderização e uso visual de menu e galeria, sem substituir leitor de tela, teclado completo, toque e mudança da preferência de movimento durante a sessão. `src/App.tsx:37-58` reage à mudança de `matchMedia`, mas esse comportamento dinâmico não tem teste dedicado.
 
-**Impacto:** em desktop, arrastar para fora da galeria pode deixar estado de gesto obsoleto e causar avanço ou retorno inesperado na próxima interação.
+**Ação:** percorrer a página com teclado e leitor de tela, testar arraste em mouse e toque reais, alternar movimento reduzido com a página aberta e observar a recuperação após perda de contexto WebGL. Registrar navegador, dispositivo e resultado de cada caso.
 
-**Correção recomendada:** capturar o ponteiro no início do gesto ou limpar o estado em um listener de `pointerup` na janela, mantendo o cancelamento já existente.
+### P2. A publicação depende de uma decisão explícita sobre indexação
 
-### P2. Não há comando ou pipeline para testes de comportamento
+`index.html:7` define `noindex, nofollow`, apropriado para a proposta demonstrativa. Essa meta não restringe o acesso a quem possui o endereço.
 
-`package.json:6-12` define lint, checagem de tipos, build e preview, mas não define teste unitário, teste de componentes ou teste de navegador. O workflow `.github/workflows/deploy.yml:45-50` executa lint, checagem de tipos e build antes de publicar.
+**Ação:** manter a meta enquanto o projeto for demonstração. Antes de uma publicação oficial, revisar indexação junto das aprovações de conteúdo e da configuração do domínio.
 
-**Impacto:** a automação atual detecta problemas estáticos e de compilação, mas não prova o comportamento do menu, da galeria, dos links de navegação ou do fallback do WebGL.
+## Evidência e limites desta atualização
 
-**Correção recomendada:** adicionar testes de comportamento para menu mobile, avanço e limites da galeria e conteúdo demonstrativo antes de evoluir a página para um site oficial. Incluir esses testes no workflow antes da etapa de publicação.
-
-### P2. O carregamento de fontes depende de um serviço externo
-
-`src/styles.css:1` importa Barlow Condensed e DM Sans de `fonts.googleapis.com`. `docs/ASSETS.md` registra as alternativas de sistema em `src/styles.css`, mas não há hospedagem local. Se o serviço estiver bloqueado ou indisponível, a página continua com fontes alternativas, porém a composição usa títulos em escala muito grande e pode mudar de quebra e espaçamento.
-
-**Impacto:** a aparência depende de uma requisição a terceiro e a tipografia pode variar conforme rede e sistema. A requisição também expõe dados de conexão do visitante ao provedor de fontes.
-
-**Correção recomendada:** para publicação oficial, decidir entre hospedar as fontes licenciadas localmente ou documentar e avaliar a dependência externa junto da política de privacidade. Validar a composição com as fontes alternativas.
-
-## Pontos de atenção para publicação oficial
-
-- `index.html:7` define `noindex, nofollow`. Isso é coerente com a proposta demonstrativa e precisa ser revisto explicitamente antes de uma publicação oficial. A regra não impede que qualquer pessoa com o endereço acesse a página, como o próprio `docs/README.md` explica.
-- `src/App.tsx:196-199` apresenta a data de fundação como confirmada. `docs/ASSETS.md` limita a evidência ao cadastro da Liga Santoandreense de 2025, enquanto `docs/CONTENT_PENDING.md` pede validação institucional antes do uso oficial. Manter a atribuição da fonte ou registrar aprovação direta do clube antes de tratar o dado como institucional.
-- `docs/CONTENT_PENDING.md` lista pendências de identidade, arena, futebol, galeria, parceiros, contato e governança. São dependências de produto e autorização, não tarefas que a revisão possa resolver por código.
-- `src/App.tsx:233-234` implementa uma galeria com controles próprios, rolagem horizontal, teclado e gesto de mouse. A revisão do código não substitui teste com teclado, toque e tecnologia assistiva nos navegadores de destino.
-- `src/components/Crest3D.tsx:96-110` considera movimento reduzido e ponteiro grosseiro ao escolher o modo estático. A verificação de `prefers-reduced-motion` está presente. Ainda falta validar visualmente a troca de modo e a recuperação quando a preferência muda durante a sessão.
-
-## Práticas a implementar
-
-1. Definir testes automatizados para o comportamento interativo e executá-los no workflow antes de publicar.
-2. Isolar os elementos que mudam com a rolagem para evitar renderização da página inteira em cada quadro.
-3. Ter fallback 2D também para erros de execução do WebGL, além da seleção preventiva de modo.
-4. Validar navegação e galeria com teclado, leitor de tela, toque e preferência de movimento reduzido.
-5. Antes de tornar o site oficial, obter validação institucional do conteúdo e dos direitos de uso, resolver as pendências de `docs/CONTENT_PENDING.md` e decidir sobre fontes externas e indexação.
-6. Medir o desempenho em um dispositivo móvel de referência antes de ampliar os efeitos visuais. Esta revisão não inclui medições.
-
-## Evidência ainda necessária
-
-A revisão não executou lint, checagem de tipos ou build, e não abriu a página em navegador. Portanto, não confirma o estado visual, o comportamento real em navegadores, os tempos de carregamento ou o resultado dos comandos existentes. O workflow contém as etapas estáticas de validação, mas não há log de execução disponível nesta análise.
+- `npm test`: 9 testes aprovados após as correções. Antes da implementação, a suíte registrou falhas para captura do ponteiro, fallback WebGL, renderização durante rolagem e escolha do escudo estático em movimento reduzido e ponteiro grosseiro.
+- `npm run lint` e `npm run typecheck`: concluídos sem erros.
+- `VITE_BASE_PATH=/GremioLanding/ npm run build`: concluído. O HTML e os assets gerados usam a base `/GremioLanding/`; o build emite aviso para o chunk 3D de 916,44 kB.
+- Preview local da build com a base correta: página renderizada, com menu e galeria conferidos visualmente.
+- Sem evidência nesta revisão: execução remota do GitHub Actions, métricas de desempenho, dispositivo físico, leitor de tela, falha real de textura ou perda real de contexto WebGL.

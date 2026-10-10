@@ -1,7 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap');
-
 :root {
-  font-family: 'DM Sans', Arial, sans-serif;
+  font-family: 'DM Sans Variable', Arial, sans-serif;
   color: #f6f7f4;
   background: #0c1015;
   font-synthesis: none;
@@ -33,6 +31,20 @@ img { display: block; max-inline-size: 100%; }
 .reading-progress { position: fixed; z-index: 120; inset: 0 0 auto; block-size: 3px; pointer-events: none; }
 .reading-progress span { display: block; inline-size: 100%; block-size: 100%; background: var(--gold); transform-origin: left; }
 
+@keyframes reading-progress-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: scroll()) {
+    .reading-progress span {
+      animation: reading-progress-grow auto linear both;
+      animation-timeline: scroll(root block);
+    }
+  }
+}
+
 .site-header { position: fixed; z-index: 100; inset: 3px 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 22px; padding: 18px var(--page-padding); color: var(--white); transition: background .3s, padding .3s, border-color .3s; border-block-end: 1px solid transparent; }
 .site-header.is-compact { padding-block: 10px; background: rgba(12, 16, 21, .96); border-color: rgba(255, 255, 255, .14); backdrop-filter: blur(12px); }
 .header-identity { display: flex; align-items: center; gap: 11px; min-inline-size: 190px; }
@@ -61,7 +73,7 @@ a:hover .arrow-icon { transform: translate(3px, -2px); }
 .mobile-menu nav { display: grid; margin-block: auto; padding-block: 38px; }
 .mobile-menu nav a { display: flex; justify-content: space-between; align-items: center; gap: 10px; border-block-end: 1px solid rgba(255,255,255,.24); padding: 4px 0; font: 700 clamp(40px, 7vh, 60px)/.92 var(--display); text-transform: uppercase; }
 .mobile-menu nav a[aria-current] { color: var(--gold); }
-.mobile-menu nav a .arrow-icon { font: 400 25px 'DM Sans', sans-serif; }
+.mobile-menu nav a .arrow-icon { font: 400 25px 'DM Sans Variable', sans-serif; }
 .mobile-menu p { margin: 0; font-size: 12px; line-height: 1.5; }
 
 main section { position: relative; }
@@ -200,7 +212,7 @@ section h2 { margin: 0; font: 800 clamp(70px, 9vw, 152px)/.8 var(--display); let
 .contact-bottom { display: flex; align-items: end; justify-content: space-between; gap: 30px; margin-block-start: 75px; }
 .contact-bottom p { max-inline-size: 310px; margin: 0; font-size: 14px; line-height: 1.6; }
 .instagram-link { display: flex; align-items: center; gap: 26px; padding-block: 16px; border-block: 1px solid rgba(255,255,255,.6); font: 700 clamp(30px, 4vw, 56px)/.9 var(--display); text-transform: uppercase; }
-.instagram-link span:nth-child(1) { font: 600 12px 'DM Sans', sans-serif; text-transform: none; }
+.instagram-link span:nth-child(1) { font: 600 12px 'DM Sans Variable', sans-serif; text-transform: none; }
 
 .site-footer { color: var(--white); background: var(--ink); padding: 65px var(--page-padding) 27px; }
 .footer-main { display: grid; grid-template-columns: 1.5fr .6fr .35fr; gap: 35px; padding-block-end: 90px; }

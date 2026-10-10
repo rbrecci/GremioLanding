@@ -91,13 +91,15 @@ export default function Crest3D() {
   const container = useRef<HTMLDivElement>(null)
   const invalidate = useRef<() => void>(() => undefined)
   const target = useRef<MotionTarget>({ x: 0, y: 0, scroll: 0, hover: false })
+  const contextListener = useRef<{ canvas: HTMLCanvasElement; onLost: (event: Event) => void } | null>(null)
+  const webglFailed = useRef(false)
   const [mode, setMode] = useState<'pending' | 'webgl' | 'still'>('pending')
 
   useEffect(() => {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     const coarsePointer = window.matchMedia('(pointer: coarse)')
     const updateMode = () => {
-      setMode(reducedMotion.matches || coarsePointer.matches || !canUseWebGL() ? 'still' : 'webgl')
+      setMode(webglFailed.current || reducedMotion.matches || coarsePointer.matches || !canUseWebGL() ? 'still' : 'webgl')
     }
 
     updateMode()
@@ -126,6 +128,26 @@ export default function Crest3D() {
     window.addEventListener('scroll', updateScroll, { passive: true })
     return () => window.removeEventListener('scroll', updateScroll)
   }, [mode])
+
+  useEffect(() => () => {
+    const listener = contextListener.current
+    if (listener) listener.canvas.removeEventListener('webglcontextlost', listener.onLost)
+    contextListener.current = null
+  }, [mode])
+
+  const onCanvasCreated = (state: { invalidate: () => void; gl: { domElement: HTMLCanvasElement } }) => {
+    invalidate.current = state.invalidate
+    const previous = contextListener.current
+    if (previous) previous.canvas.removeEventListener('webglcontextlost', previous.onLost)
+    const canvas = state.gl.domElement
+    const onLost = (event: Event) => {
+      event.preventDefault()
+      webglFailed.current = true
+      setMode('still')
+    }
+    canvas.addEventListener('webglcontextlost', onLost)
+    contextListener.current = { canvas, onLost }
+  }
 
   const movePointer = (event: PointerEvent<HTMLDivElement>) => {
     if (mode !== 'webgl') return
@@ -161,7 +183,7 @@ export default function Crest3D() {
           dpr={[1, 1.75]}
           camera={{ position: [0, 0, 3.8], fov: 40 }}
           gl={{ antialias: true, alpha: true, powerPreference: 'low-power' }}
-          onCreated={(state) => { invalidate.current = state.invalidate }}
+          onCreated={onCanvasCreated}
         >
           <ambientLight intensity={1.6} />
           <directionalLight position={[-2, 3, 4]} intensity={2.8} color="#e4f4ff" />
