@@ -61,11 +61,11 @@ Os metadados incluem `noindex, nofollow` para desencorajar indexação da propos
 - `src/components/` contém componentes visuais e a experiência 3D.
 - `src/styles.css` define o sistema visual e os layouts responsivos.
 - `public/` guarda o escudo de referência, o favicon conceitual e as imagens ilustrativas.
-- `DESIGN.md` registra as decisões de direção de arte.
-- `ASSETS.md` registra origem, classificação e autorização de cada recurso visual.
-- `CONTENT_PENDING.md` reúne os dados e permissões necessários para eventual uso oficial.
+- `docs/DESIGN.md` registra as decisões de direção de arte.
+- `docs/ASSETS.md` registra origem, classificação e autorização de cada recurso visual.
+- `docs/CONTENT_PENDING.md` reúne os dados e permissões necessários para eventual uso oficial.
 
-Para atualizar textos ou exemplos, edite o conteúdo demonstrativo do aplicativo e preserve as identificações visíveis de dados simulados. Antes de substituir imagens, confirme a autorização de uso, registre a nova origem em `ASSETS.md` e revise textos alternativos e créditos. Antes de converter a proposta em site oficial, resolva os itens de `CONTENT_PENDING.md` com o clube.
+Para atualizar textos ou exemplos, edite o conteúdo demonstrativo do aplicativo e preserve as identificações visíveis de dados simulados. Antes de substituir imagens, confirme a autorização de uso, registre a nova origem em `docs/ASSETS.md` e revise textos alternativos e créditos. Antes de converter a proposta em site oficial, resolva os itens de `docs/CONTENT_PENDING.md` com o clube.
 
 ## Créditos
 

@@ -480,7 +480,7 @@ Sugestões:
 * content-status.ts
 
 Isso deve permitir substituir posteriormente os conteúdos sem reescrever os componentes.
-Crie `ASSETS.md` documentando:
+Crie `docs/ASSETS.md` documentando:
 
 * Nome do recurso.
 * Localização no projeto.
@@ -726,7 +726,7 @@ Antes de construir os componentes, estabeleça:
 * Navegação.
 * Linguagem fotográfica.
 
-Registre as principais decisões em DESIGN.md.
+Registre as principais decisões em docs/DESIGN.md.
 ETAPA 3: IMPLEMENTAÇÃO
 Desenvolva a aplicação completa.
 Inclua todas as seções previstas, desde a hero até o footer.
@@ -792,13 +792,13 @@ Entregue:
 9. Placeholders visuais identificados.
 10. Footer com crédito e LinkedIn de RBrecci.
 11. Workflow GitHub Actions para GitHub Pages.
-12. README.md.
-13. DESIGN.md.
-14. ASSETS.md.
-15. CONTENT_PENDING.md.
+12. docs/README.md.
+13. docs/DESIGN.md.
+14. docs/ASSETS.md.
+15. docs/CONTENT_PENDING.md.
 16. Verificações e relatório de implementação.
 
-README.md
+docs/README.md
 Documente:
 
 * Objetivo do protótipo.
@@ -813,7 +813,7 @@ Documente:
 * Estrutura do projeto.
 * Créditos.
 
-CONTENT_PENDING.md
+docs/CONTENT_PENDING.md
 Identifique o que precisaria ser confirmado antes da possível transformação do protótipo em um site oficial.
 Exemplos:
 
